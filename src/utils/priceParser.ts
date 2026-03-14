@@ -11,9 +11,12 @@ function normalizeNumber(raw: string): string {
  * Handles OCR comma-as-space: "1 , 290" -> "1290"
  */
 function preprocessThousandSeparators(text: string): string {
-  return text.replace(/(\d{1,3})((?:\s*[,，]\s*\d{3})*(?:\.\d+)?)/g, (_, head, tail) => {
-    return head + tail.replace(/[\s,，]/g, '');
-  });
+  return text.replace(
+    /(\d{1,3})((?:\s*[,，]\s*\d{3})*(?:\.\d+)?)/g,
+    (_, head, tail) => {
+      return head + tail.replace(/[\s,，]/g, '');
+    },
+  );
 }
 
 /**
@@ -30,7 +33,8 @@ export function extractAllPrices(text: string): string[] {
   const seen = new Set<string>();
 
   // 1. Numbers with currency symbols (priority)
-  const currencyRegex = /[$¥€£]\s*([\d,]+\.?\d*)|(?:NT\$|USD|TWD)\s*([\d,]+\.?\d*)/gi;
+  const currencyRegex =
+    /[$¥€£]\s*([\d,]+\.?\d*)|(?:NT\$|USD|TWD)\s*([\d,]+\.?\d*)/gi;
   let m: RegExpExecArray | null;
   while ((m = currencyRegex.exec(normalized)) !== null) {
     const raw = (m[1] ?? m[2] ?? '').trim();
@@ -42,7 +46,8 @@ export function extractAllPrices(text: string): string[] {
   }
 
   // 2. Thousand-separator format (requires comma to avoid matching e.g. 1290)
-  const thousandsRegex = /(\d{1,3}(?:,\d{3})+(?:\.\d+)?)|(\d{1,3}(?:\.\d{3})+(?:,\d+)?)/g;
+  const thousandsRegex =
+    /(\d{1,3}(?:,\d{3})+(?:\.\d+)?)|(\d{1,3}(?:\.\d{3})+(?:,\d+)?)/g;
   while ((m = thousandsRegex.exec(normalized)) !== null) {
     const raw = (m[1] ?? m[2] ?? '').trim();
     const n = normalizeNumber(raw);
@@ -71,9 +76,7 @@ export function extractAllPrices(text: string): string[] {
  * Remove items that are substrings of other numbers; prefer longer numbers
  */
 function filterSubstringNumbers(numbers: string[]): string[] {
-  return numbers.filter(
-    (n) => !numbers.some((m) => m !== n && m.includes(n))
-  );
+  return numbers.filter((n) => !numbers.some((m) => m !== n && m.includes(n)));
 }
 
 /**
@@ -82,12 +85,12 @@ function filterSubstringNumbers(numbers: string[]): string[] {
  */
 function pickBestPrice(all: string[]): string | null {
   if (all.length === 0) return null;
-  if (all.length === 1) return all[0];
+  if (all.length === 1) return all[0] ?? null;
 
   // Prefer numbers with decimal (typical price format)
   const withDecimal = all.filter((n) => n.includes('.'));
   if (withDecimal.length > 0) {
-    return withDecimal[0];
+    return withDecimal[0] ?? null;
   }
   // Otherwise prefer longer number (e.g. 1290 over 50)
   return all.reduce((a, b) => (a.length >= b.length ? a : b));
@@ -96,7 +99,10 @@ function pickBestPrice(all: string[]): string | null {
 /**
  * Extract price from OCR text (returns best guess + all candidates)
  */
-export function extractPrice(text: string): { best: string | null; all: string[] } {
+export function extractPrice(text: string): {
+  best: string | null;
+  all: string[];
+} {
   const all = extractAllPrices(text);
   return { best: pickBestPrice(all), all };
 }

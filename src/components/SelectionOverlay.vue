@@ -53,8 +53,14 @@ function getEventPercent(e: MouseEvent | TouchEvent): { x: number; y: number } {
   const el = containerRef.value;
   if (!el) return { x: 0, y: 0 };
   const rect = el.getBoundingClientRect();
-  const clientX = ('touches' in e ? e.touches[0]?.clientX ?? e.changedTouches?.[0]?.clientX : e.clientX) ?? 0;
-  const clientY = ('touches' in e ? e.touches[0]?.clientY ?? e.changedTouches?.[0]?.clientY : e.clientY) ?? 0;
+  const clientX =
+    ('touches' in e
+      ? (e.touches[0]?.clientX ?? e.changedTouches?.[0]?.clientX)
+      : e.clientX) ?? 0;
+  const clientY =
+    ('touches' in e
+      ? (e.touches[0]?.clientY ?? e.changedTouches?.[0]?.clientY)
+      : e.clientY) ?? 0;
   return {
     x: ((clientX - rect.left) / rect.width) * 100,
     y: ((clientY - rect.top) / rect.height) * 100,
@@ -136,11 +142,6 @@ function resetSelection() {
   finalizedSelection.value = null;
 }
 
-function cancel() {
-  resetSelection();
-  emit('cancel');
-}
-
 defineExpose({ confirmSelection, resetSelection });
 
 onMounted(() => {
@@ -159,10 +160,24 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="selection-container" @mousedown="onPointerDown" @touchstart="onPointerDown">
-    <img ref="imgRef" :src="imageSrc" alt="" class="photo" />
+  <div
+    ref="containerRef"
+    class="selection-container"
+    @mousedown="onPointerDown"
+    @touchstart="onPointerDown"
+  >
+    <img
+      ref="imgRef"
+      :src="imageSrc"
+      alt=""
+      class="photo"
+    />
     <!-- Teal selection box with golden corners -->
-    <div v-if="selection" class="selection-box" :style="selectionStyle">
+    <div
+      v-if="selection"
+      class="selection-box"
+      :style="selectionStyle"
+    >
       <span class="corner corner-tl" />
       <span class="corner corner-tr" />
       <span class="corner corner-bl" />
