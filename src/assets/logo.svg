@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">
+  <defs>
+    <linearGradient id="vueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#41B883" />
+      <stop offset="100%" stop-color="#34495E" />
+    </linearGradient>
+  </defs>
+  
+  <path d="M 30 30 L 220 30 L 180 80 L 100 80 L 100 110 L 170 110 L 140 160 L 100 160 L 100 200 L 220 200 L 180 250 L 30 250 Z" fill="url(#vueGrad)" transform="translate(3, -12)" />
+</svg>
