@@ -11,8 +11,8 @@ const scanStore = useScanStore();
 const cameraRef = ref<InstanceType<typeof CameraPreview> | null>(null);
 const photoPreviewRef = ref<InstanceType<typeof PhotoPreview> | null>(null);
 
-/** Crop area: top 75% of the capture view */
-const TOP_75_RECT = { x: 0, y: 0, width: 100, height: 75 };
+/** Aiming frame: 75% width × 30% height, centered (matches camera overlay) */
+const AIMING_FRAME_RECT = { x: 12.5, y: 35, width: 75, height: 30 };
 
 async function runOcr(blob: Blob) {
   scanStore.setStatus('recognizing');
@@ -27,7 +27,7 @@ async function runOcr(blob: Blob) {
   }
 }
 
-/** Camera mode: tap SCAN PRICE → capture → crop top 75% → run OCR once */
+/** Camera mode: tap SCAN PRICE → capture → crop to aiming frame → run OCR on crop */
 async function handleCaptureAndOcr() {
   const camera = cameraRef.value;
   if (!camera) return;
@@ -35,10 +35,10 @@ async function handleCaptureAndOcr() {
     const blob = await camera.capture();
     const dataUrl = URL.createObjectURL(blob);
     scanStore.setCapturedImage(dataUrl);
-    scanStore.setAimingFrameRect(TOP_75_RECT);
+    scanStore.setAimingFrameRect(AIMING_FRAME_RECT);
     scanStore.setStatus('recognizing');
     scanStore.setError(null);
-    const croppedBlob = await cropImageToBlob(dataUrl, TOP_75_RECT);
+    const croppedBlob = await cropImageToBlob(dataUrl, AIMING_FRAME_RECT);
     await runOcr(croppedBlob);
   } catch (e) {
     scanStore.setError(e instanceof Error ? e.message : 'Capture or recognition failed');
@@ -56,6 +56,7 @@ async function handleConfirmSelection(rect: {
   if (!imageSrc) return;
   try {
     scanStore.exitSelectionMode();
+    scanStore.setAimingFrameRect(rect);
     const croppedBlob = await cropImageToBlob(imageSrc, rect);
     await runOcr(croppedBlob);
   } catch (e) {

@@ -63,6 +63,8 @@ function handleFlash() {
       playsinline
       muted
     />
+    <!-- Aiming frame: 75% width × 30% height, centered -->
+    <div class="aiming-frame" aria-hidden="true" />
     <div v-if="error" class="error-overlay">
       <p>{{ error }}</p>
     </div>
@@ -121,7 +123,21 @@ function handleFlash() {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1);
+}
+
+/* Centered aiming frame: 75% width × 30% height of preview */
+.aiming-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 75%;
+  height: 30%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 5;
 }
 
 .error-overlay {

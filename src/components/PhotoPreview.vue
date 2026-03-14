@@ -11,6 +11,14 @@ const emit = defineEmits<{
 
 const scanStore = useScanStore();
 const selectionOverlayRef = ref<InstanceType<typeof SelectionOverlay> | null>(null);
+const imageAspect = ref<number | null>(null);
+
+function onImageLoad(e: Event) {
+  const img = e.target as HTMLImageElement;
+  if (img.naturalWidth && img.naturalHeight) {
+    imageAspect.value = img.naturalWidth / img.naturalHeight;
+  }
+}
 
 function confirmSelection() {
   selectionOverlayRef.value?.confirmSelection();
@@ -34,13 +42,30 @@ defineExpose({ confirmSelection, resetSelection });
         @confirm="emit('confirmSelection', $event)"
         @cancel="scanStore.exitSelectionMode()"
       />
-      <!-- Normal preview: photo (actions from fixed action bar) -->
+      <!-- Normal preview: photo + OCR region overlay -->
       <template v-else>
-        <img
-          :src="scanStore.capturedImage"
-          alt="Captured photo"
-          class="photo"
-        />
+        <div
+          class="photo-wrap"
+          :style="imageAspect ? { aspectRatio: String(imageAspect) } : undefined"
+        >
+          <img
+            :src="scanStore.capturedImage"
+            alt="Captured photo"
+            class="photo"
+            @load="onImageLoad"
+          />
+          <!-- OCR region frame (aiming frame or Select Area rect) -->
+          <div
+            v-if="scanStore.aimingFrameRect"
+            class="ocr-region-overlay"
+            :style="{
+              left: scanStore.aimingFrameRect.x + '%',
+              top: scanStore.aimingFrameRect.y + '%',
+              width: scanStore.aimingFrameRect.width + '%',
+              height: scanStore.aimingFrameRect.height + '%',
+            }"
+          />
+        </div>
         <div v-if="scanStore.status === 'recognizing'" class="loading-overlay">
           <div class="spinner" />
           <p>Recognizing...</p>
@@ -62,10 +87,31 @@ defineExpose({ confirmSelection, resetSelection });
   justify-content: center;
 }
 
+.photo-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .photo {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  display: block;
+}
+
+.ocr-region-overlay {
+  position: absolute;
+  border: 2px solid var(--accent-gold, #d4af37);
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .loading-overlay {
