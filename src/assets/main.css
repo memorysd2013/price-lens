@@ -24,18 +24,28 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: hidden;
+  /* Disable double-tap zoom on iOS (viewport user-scalable=no is ignored since iOS 10) */
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-dark);
   color: var(--text-primary);
   -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+  touch-action: manipulation;
 }
 
 #app {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 button {

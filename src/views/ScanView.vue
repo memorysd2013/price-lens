@@ -156,10 +156,11 @@ function handleRetake() {
 <style scoped>
 .scan-view {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-dark);
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(136px + env(safe-area-inset-bottom));
+  padding-bottom: calc(136px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Preview/capture area: fixed at top, same size */
@@ -187,7 +188,7 @@ function handleRetake() {
 /* Fixed action bar: above BottomNav */
 .action-bar {
   position: fixed;
-  bottom: calc(64px + env(safe-area-inset-bottom));
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
   display: flex;
@@ -252,6 +253,7 @@ function handleRetake() {
 
 .error-panel {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;

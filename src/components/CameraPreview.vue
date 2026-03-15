@@ -90,7 +90,7 @@ function handleFlash() {
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  padding-top: calc(0.75rem + env(safe-area-inset-top));
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
   z-index: 10;
 }
 

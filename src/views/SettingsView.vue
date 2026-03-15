@@ -14,9 +14,10 @@
 <style scoped>
 .settings-view {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-dark);
   padding: 1.5rem;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 .placeholder-card {
