@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useCurrenciesStore } from '@/stores/currencies';
+import { useDiscountsStore } from '@/stores/discounts';
 import type { CustomCurrency } from '@/stores/currencies';
+import type { CustomDiscount } from '@/stores/discounts';
 
 const currenciesStore = useCurrenciesStore();
+const discountsStore = useDiscountsStore();
 
 const formOpen = ref(false);
 const editingId = ref<string | null>(null);
@@ -46,6 +49,10 @@ function submitForm() {
     formError.value = '請輸入幣別名稱';
     return;
   }
+  if (currenciesStore.isNameTaken(name, editingId.value ?? undefined)) {
+    formError.value = '名稱已存在';
+    return;
+  }
   if (Number.isNaN(rateNum) || rateNum <= 0) {
     formError.value = '對台幣匯率必須大於 0';
     return;
@@ -72,6 +79,83 @@ function submitForm() {
 
 function removeCurrency(id: string) {
   currenciesStore.remove(id);
+}
+
+// Discount form
+const discountFormOpen = ref(false);
+const discountEditingId = ref<string | null>(null);
+const discountFormName = ref('');
+const discountFormPercent = ref('');
+const discountFormError = ref('');
+
+const isDiscountEditing = computed(() => discountEditingId.value != null);
+
+function openDiscountAddForm() {
+  discountEditingId.value = null;
+  discountFormName.value = '';
+  discountFormPercent.value = '';
+  discountFormError.value = '';
+  discountFormOpen.value = true;
+}
+
+function openDiscountEditForm(discount: CustomDiscount) {
+  discountEditingId.value = discount.id;
+  discountFormName.value = discount.name;
+  discountFormPercent.value = String(discount.percent);
+  discountFormError.value = '';
+  discountFormOpen.value = true;
+}
+
+function closeDiscountForm() {
+  discountFormOpen.value = false;
+  discountEditingId.value = null;
+  discountFormName.value = '';
+  discountFormPercent.value = '';
+  discountFormError.value = '';
+}
+
+function submitDiscountForm() {
+  discountFormError.value = '';
+  const name = discountFormName.value.trim();
+  const percentNum = parseInt(
+    discountFormPercent.value.replace(/\D/g, ''),
+    10,
+  );
+
+  if (!name) {
+    discountFormError.value = '請輸入折扣名稱';
+    return;
+  }
+  if (discountsStore.isNameTaken(name, discountEditingId.value ?? undefined)) {
+    discountFormError.value = '名稱已存在';
+    return;
+  }
+  if (Number.isNaN(percentNum) || percentNum < 1 || percentNum > 99) {
+    discountFormError.value = '折扣請輸入 1–99 的整數';
+    return;
+  }
+
+  if (isDiscountEditing.value && discountEditingId.value) {
+    const ok = discountsStore.update(discountEditingId.value, {
+      name,
+      percent: percentNum,
+    });
+    if (!ok) {
+      discountFormError.value = '更新失敗';
+      return;
+    }
+  } else {
+    const ok = discountsStore.add({ name, percent: percentNum });
+    if (!ok) {
+      discountFormError.value = '新增失敗，請檢查名稱與百分比';
+      return;
+    }
+  }
+  closeDiscountForm();
+}
+
+function removeDiscount(id: string) {
+  discountsStore.remove(id);
 }
 </script>
 
@@ -132,9 +216,60 @@ function removeCurrency(id: string) {
           新增幣別
         </button>
       </section>
+
+      <section class="section section-divider">
+        <h3 class="section-title">折扣設定</h3>
+        <p class="section-desc">
+          新增折扣百分比（1%–99%），可在掃描結果中選擇並顯示折扣後金額。
+        </p>
+
+        <ul
+          v-if="discountsStore.list.length > 0"
+          class="currency-list"
+        >
+          <li
+            v-for="d in discountsStore.list"
+            :key="d.id"
+            class="currency-item"
+          >
+            <span class="currency-name">{{ d.name }}</span>
+            <span class="currency-rate">{{ d.percent }}%</span>
+            <div class="currency-actions">
+              <button
+                type="button"
+                class="btn-icon"
+                @click="openDiscountEditForm(d)"
+              >
+                編輯
+              </button>
+              <button
+                type="button"
+                class="btn-icon btn-danger"
+                @click="removeDiscount(d.id)"
+              >
+                刪除
+              </button>
+            </div>
+          </li>
+        </ul>
+        <p
+          v-else
+          class="empty-hint"
+        >
+          尚未新增任何折扣
+        </p>
+
+        <button
+          type="button"
+          class="btn-add"
+          @click="openDiscountAddForm"
+        >
+          新增折扣
+        </button>
+      </section>
     </div>
 
-    <!-- Add/Edit form -->
+    <!-- Currency Add/Edit form -->
     <div
       v-if="formOpen"
       class="form-overlay"
@@ -188,6 +323,61 @@ function removeCurrency(id: string) {
         </form>
       </div>
     </div>
+
+    <!-- Discount Add/Edit form -->
+    <div
+      v-if="discountFormOpen"
+      class="form-overlay"
+      @click.self="closeDiscountForm"
+    >
+      <div class="form-card">
+        <h3 class="form-title">{{ isDiscountEditing ? '編輯折扣' : '新增折扣' }}</h3>
+        <form @submit.prevent="submitDiscountForm">
+          <div class="form-field">
+            <label for="discount-name">折扣名稱</label>
+            <input
+              id="discount-name"
+              v-model="discountFormName"
+              type="text"
+              placeholder="例如：折扣1"
+              class="form-input"
+            />
+          </div>
+          <div class="form-field">
+            <label for="discount-percent">折扣百分比</label>
+            <input
+              id="discount-percent"
+              v-model="discountFormPercent"
+              type="text"
+              inputmode="numeric"
+              placeholder="1–99 整數"
+              class="form-input"
+            />
+          </div>
+          <p
+            v-if="discountFormError"
+            class="form-error"
+          >
+            {{ discountFormError }}
+          </p>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn-secondary"
+              @click="closeDiscountForm"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+            >
+              {{ isDiscountEditing ? '儲存' : '新增' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -214,6 +404,12 @@ function removeCurrency(id: string) {
 
 .section {
   margin-bottom: 0;
+}
+
+.section-divider {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .section-title {

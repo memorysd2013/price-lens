@@ -44,6 +44,10 @@ function saveSelectedId(id: string | null) {
   else localStorage.setItem(SELECTED_KEY, id);
 }
 
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
 export const useCurrenciesStore = defineStore('currencies', () => {
   const list = ref<CustomCurrency[]>(loadFromStorage());
   const selectedCurrencyId = ref<string | null>(loadSelectedId());
@@ -85,8 +89,17 @@ export const useCurrenciesStore = defineStore('currencies', () => {
   // Persist selected id
   watch(selectedCurrencyId, (id) => saveSelectedId(id), { immediate: true });
 
+  function isNameTaken(name: string, excludeId?: string): boolean {
+    const n = normalizeName(name);
+    if (!n) return false;
+    return list.value.some(
+      (c) => c.id !== excludeId && normalizeName(c.name) === n,
+    );
+  }
+
   function add(currency: Omit<CustomCurrency, 'id'>) {
     if (currency.rateToTWD <= 0) return false;
+    if (isNameTaken(currency.name)) return false;
     const id = crypto.randomUUID();
     const item: CustomCurrency = { ...currency, id };
     list.value = [...list.value, item];
@@ -103,8 +116,10 @@ export const useCurrenciesStore = defineStore('currencies', () => {
     if (!item) return false;
     const nextRate = updates.rateToTWD ?? item.rateToTWD;
     if (nextRate <= 0) return false;
+    const nextName = updates.name !== undefined ? updates.name : item.name;
+    if (isNameTaken(nextName, id)) return false;
     list.value = list.value.map((c) =>
-      c.id === id ? { ...c, ...updates, rateToTWD: nextRate } : c,
+      c.id === id ? { ...c, ...updates, name: nextName, rateToTWD: nextRate } : c,
     );
     saveToStorage(list.value);
     return true;
@@ -123,6 +138,7 @@ export const useCurrenciesStore = defineStore('currencies', () => {
     selectedCurrencyId,
     selectedCurrency,
     setSelectedCurrencyId,
+    isNameTaken,
     add,
     update,
     remove,

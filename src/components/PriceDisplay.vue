@@ -2,15 +2,18 @@
 import { ref, computed, inject, watch } from 'vue';
 import { useScanStore } from '@/stores/scan';
 import { useCurrenciesStore } from '@/stores/currencies';
+import { useDiscountsStore } from '@/stores/discounts';
 
 type ViewName = 'scan' | 'history' | 'settings';
 const navigate = inject<(view: ViewName) => void>('navigate');
 
 const scanStore = useScanStore();
 const currenciesStore = useCurrenciesStore();
+const discountsStore = useDiscountsStore();
 
 const originalTextOpen = ref(false);
 const sourceDropdownOpen = ref(false);
+const discountDropdownOpen = ref(false);
 const selectedPrice = ref<string | null>(null);
 
 function parsePriceToNumber(s: string | null): number | null {
@@ -39,6 +42,13 @@ const convertedValue = computed(() => {
   return Math.round(num * rate * 100) / 100;
 });
 
+const discountedValue = computed(() => {
+  const base = convertedValue.value;
+  const discount = discountsStore.selectedDiscount;
+  if (base == null || discount == null) return null;
+  return Math.round(base * (1 - discount.percent / 100));
+});
+
 const conversionHint = computed(() => {
   if (currenciesStore.list.length === 0) return '請至設定新增幣別';
   if (currenciesStore.selectedCurrency == null) return '請選擇來源幣別';
@@ -53,6 +63,7 @@ function selectPrice(price: string) {
 
 function goToSettings() {
   sourceDropdownOpen.value = false;
+  discountDropdownOpen.value = false;
   navigate?.('settings');
 }
 
@@ -119,6 +130,12 @@ watch(
         class="converted-twd"
       >
         約 {{ convertedValue.toLocaleString() }} TWD
+      </div>
+      <div
+        v-if="canShowConversion && convertedValue != null && discountedValue != null"
+        class="discounted-twd"
+      >
+        折扣 {{ discountsStore.selectedDiscount?.percent }}% → {{ discountedValue.toLocaleString() }} TWD
       </div>
       <div
         v-else-if="conversionHint"
@@ -193,6 +210,78 @@ watch(
               "
             >
               {{ c.name }} — 1 = {{ c.rateToTWD }} TWD
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Discount dropdown -->
+      <div class="section">
+        <span class="section-label">選擇折扣</span>
+        <div
+          v-if="discountsStore.list.length === 0"
+          class="dropdown-empty"
+        >
+          <span>尚未設定折扣</span>
+          <button
+            type="button"
+            class="hint-link"
+            @click="goToSettings"
+          >
+            前往設定
+          </button>
+        </div>
+        <div
+          v-else
+          class="dropdown-wrap"
+        >
+          <button
+            type="button"
+            class="dropdown-btn"
+            :class="{ open: discountDropdownOpen }"
+            @click="discountDropdownOpen = !discountDropdownOpen"
+          >
+            <span>{{
+              discountsStore.selectedDiscount
+                ? `${discountsStore.selectedDiscount.name} (${discountsStore.selectedDiscount.percent}%)`
+                : '無折扣'
+            }}</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          <div
+            v-show="discountDropdownOpen"
+            class="dropdown-menu"
+          >
+            <button
+              type="button"
+              class="dropdown-item"
+              :class="{ active: discountsStore.selectedDiscountId === null }"
+              @click="
+                discountsStore.setSelectedDiscountId(null);
+                discountDropdownOpen = false;
+              "
+            >
+              無折扣
+            </button>
+            <button
+              v-for="d in discountsStore.list"
+              :key="d.id"
+              type="button"
+              class="dropdown-item"
+              :class="{ active: discountsStore.selectedDiscountId === d.id }"
+              @click="
+                discountsStore.setSelectedDiscountId(d.id);
+                discountDropdownOpen = false;
+              "
+            >
+              {{ d.name }} — {{ d.percent }}%
             </button>
           </div>
         </div>
@@ -363,6 +452,13 @@ watch(
   font-size: 1rem;
   font-weight: 500;
   color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.discounted-twd {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 
