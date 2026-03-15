@@ -1,5 +1,11 @@
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -12,8 +18,8 @@
   --card-dark: #1c2333;
   --nav-dark: #152238;
   --section-dark: #1a2744;
-  --accent-gold: #c9a227;
-  --accent-gold-hover: #d4b03a;
+  --primary: #d0bb95;
+  --primary-hover: #e0c79e;
   --selection-teal: #2dd4bf;
   --text-primary: #fff;
   --text-secondary: rgba(255, 255, 255, 0.85);

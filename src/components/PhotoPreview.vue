@@ -4,13 +4,17 @@ import { useScanStore } from '@/stores/scan';
 import SelectionOverlay from '@/components/SelectionOverlay.vue';
 
 const emit = defineEmits<{
-  confirmSelection: [rect: { x: number; y: number; width: number; height: number }];
+  confirmSelection: [
+    rect: { x: number; y: number; width: number; height: number },
+  ];
   retake: [];
   selectArea: [];
 }>();
 
 const scanStore = useScanStore();
-const selectionOverlayRef = ref<InstanceType<typeof SelectionOverlay> | null>(null);
+const selectionOverlayRef = ref<InstanceType<typeof SelectionOverlay> | null>(
+  null,
+);
 const imageAspect = ref<number | null>(null);
 
 function onImageLoad(e: Event) {
@@ -46,7 +50,9 @@ defineExpose({ confirmSelection, resetSelection });
       <template v-else>
         <div
           class="photo-wrap"
-          :style="imageAspect ? { aspectRatio: String(imageAspect) } : undefined"
+          :style="
+            imageAspect ? { aspectRatio: String(imageAspect) } : undefined
+          "
         >
           <img
             :src="scanStore.capturedImage"
@@ -66,7 +72,10 @@ defineExpose({ confirmSelection, resetSelection });
             }"
           />
         </div>
-        <div v-if="scanStore.status === 'recognizing'" class="loading-overlay">
+        <div
+          v-if="scanStore.status === 'recognizing'"
+          class="loading-overlay"
+        >
           <div class="spinner" />
           <p>Recognizing...</p>
         </div>
@@ -107,7 +116,7 @@ defineExpose({ confirmSelection, resetSelection });
 
 .ocr-region-overlay {
   position: absolute;
-  border: 2px solid var(--accent-gold, #d4af37);
+  border: 2px solid var(--primary, #d4af37);
   border-radius: 6px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
   pointer-events: none;

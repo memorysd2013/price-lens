@@ -122,7 +122,7 @@ function handleNav(view: 'scan' | 'history' | 'settings') {
 }
 
 .nav-item.active {
-  color: var(--accent-gold);
+  color: var(--primary);
 }
 
 .nav-icon {

@@ -41,7 +41,9 @@ async function handleCaptureAndOcr() {
     const croppedBlob = await cropImageToBlob(dataUrl, AIMING_FRAME_RECT);
     await runOcr(croppedBlob);
   } catch (e) {
-    scanStore.setError(e instanceof Error ? e.message : 'Capture or recognition failed');
+    scanStore.setError(
+      e instanceof Error ? e.message : 'Capture or recognition failed',
+    );
     scanStore.setStatus('error');
   }
 }
@@ -116,8 +118,21 @@ function handleRetake() {
           :disabled="scanStore.status === 'idle'"
           @click="handleCaptureAndOcr"
         >
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <svg
+            class="btn-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect
+              x="3"
+              y="3"
+              width="18"
+              height="18"
+              rx="2"
+              ry="2"
+            />
           </svg>
           SCAN PRICE
         </button>
@@ -126,26 +141,44 @@ function handleRetake() {
         <span class="action-bar-label">Recognizing...</span>
       </template>
       <template v-else-if="['captured', 'done'].includes(scanStore.status)">
-        <button class="btn btn-outline" @click="handleRetake">
+        <button
+          class="btn btn-outline"
+          @click="handleRetake"
+        >
           Retake
         </button>
-        <button class="btn btn-scan" @click="scanStore.enterSelectionMode()">
+        <button
+          class="btn btn-scan"
+          @click="scanStore.enterSelectionMode()"
+        >
           Select Area
         </button>
       </template>
       <template v-else-if="scanStore.status === 'selecting'">
-        <button class="btn btn-outline" @click="handleRetake">
+        <button
+          class="btn btn-outline"
+          @click="handleRetake"
+        >
           Retake
         </button>
-        <button class="btn btn-outline" @click="photoPreviewRef?.resetSelection?.()">
+        <button
+          class="btn btn-outline"
+          @click="photoPreviewRef?.resetSelection?.()"
+        >
           Reset
         </button>
-        <button class="btn btn-scan" @click="photoPreviewRef?.confirmSelection?.()">
+        <button
+          class="btn btn-scan"
+          @click="photoPreviewRef?.confirmSelection?.()"
+        >
           Confirm
         </button>
       </template>
       <template v-else-if="scanStore.status === 'error'">
-        <button class="btn btn-scan" @click="handleRetake">
+        <button
+          class="btn btn-scan"
+          @click="handleRetake"
+        >
           Retry
         </button>
       </template>
@@ -210,7 +243,9 @@ function handleRetake() {
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  transition: opacity 0.2s, background 0.2s;
+  transition:
+    opacity 0.2s,
+    background 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -223,12 +258,12 @@ function handleRetake() {
 }
 
 .action-bar .btn-scan {
-  background: var(--accent-gold);
+  background: var(--primary);
   color: #fff;
 }
 
 .action-bar .btn-scan:hover:not(:disabled) {
-  background: var(--accent-gold-hover);
+  background: var(--primary-hover);
 }
 
 .action-bar .btn-outline {

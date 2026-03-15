@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, provide } from 'vue';
 import ReloadPrompt from '@/components/ReloadPrompt.vue';
 import ScanView from '@/views/ScanView.vue';
 import HistoryView from '@/views/HistoryView.vue';
@@ -12,6 +12,8 @@ const currentView = ref<ViewName>('scan');
 function handleNavigate(view: ViewName) {
   currentView.value = view;
 }
+
+provide<typeof handleNavigate>('navigate', handleNavigate);
 </script>
 
 <template>

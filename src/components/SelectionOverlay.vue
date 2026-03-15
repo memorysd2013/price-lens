@@ -218,7 +218,7 @@ onUnmounted(() => {
   position: absolute;
   width: 16px;
   height: 16px;
-  border-color: var(--accent-gold);
+  border-color: var(--primary);
   border-style: solid;
   border-width: 0;
 }
