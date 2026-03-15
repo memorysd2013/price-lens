@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useCamera } from '@/composables/useCamera';
 import { useScanStore } from '@/stores/scan';
 
+const containerRef = ref<HTMLDivElement | null>(null);
 const videoRef = ref<HTMLVideoElement | null>(null);
 const { stream, error, isReady, startCamera, captureFromVideo } = useCamera();
 const scanStore = useScanStore();
@@ -24,11 +25,16 @@ watch(stream, (s) => {
   }
 });
 
-/** Capture current frame as Blob for parent to crop and run OCR */
+/** Capture current frame cropped to preview visible area (same as object-fit: cover) */
 async function capture(): Promise<Blob> {
   const video = videoRef.value;
   if (!video || !isReady.value) throw new Error('Camera not ready');
-  return captureFromVideo(video);
+  const container = containerRef.value;
+  const opts =
+    container && container.clientWidth > 0 && container.clientHeight > 0
+      ? { containerWidth: container.clientWidth, containerHeight: container.clientHeight }
+      : undefined;
+  return captureFromVideo(video, opts);
 }
 
 defineExpose({ capture });
@@ -39,7 +45,7 @@ function handleFlash() {
 </script>
 
 <template>
-  <div class="camera-preview">
+  <div ref="containerRef" class="camera-preview">
     <!-- Header overlay -->
     <div class="camera-header">
       <button class="header-btn icon-btn" type="button" aria-label="Close">

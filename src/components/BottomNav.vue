@@ -16,6 +16,27 @@ function handleNav(view: 'scan' | 'history' | 'settings') {
   <nav class="bottom-nav">
     <button
       class="nav-item"
+      :class="{ active: current === 'history' }"
+      @click="handleNav('history')"
+    >
+      <svg
+        class="nav-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="10"
+        />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      <span class="nav-label">History</span>
+    </button>
+    <button
+      class="nav-item"
       :class="{ active: current === 'scan' }"
       @click="handleNav('scan')"
     >
@@ -36,27 +57,6 @@ function handleNav(view: 'scan' | 'history' | 'settings') {
         />
       </svg>
       <span class="nav-label">Scan</span>
-    </button>
-    <button
-      class="nav-item"
-      :class="{ active: current === 'history' }"
-      @click="handleNav('history')"
-    >
-      <svg
-        class="nav-icon"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <circle
-          cx="12"
-          cy="12"
-          r="10"
-        />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
-      <span class="nav-label">History</span>
     </button>
     <button
       class="nav-item"
@@ -90,29 +90,31 @@ function handleNav(view: 'scan' | 'history' | 'settings') {
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  height: calc(44px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--nav-dark);
   display: flex;
   align-items: center;
-  justify-content: space-around;
   z-index: 100;
 }
 
 .nav-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 0.15rem;
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  padding: 0.5rem 1rem;
-  font-size: 0.75rem;
+  padding: 0 0.5rem;
+  font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.05em;
   transition: color 0.2s;
+  min-width: 0;
 }
 
 .nav-item:hover {
@@ -124,7 +126,7 @@ function handleNav(view: 'scan' | 'history' | 'settings') {
 }
 
 .nav-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 </style>

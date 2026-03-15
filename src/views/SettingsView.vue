@@ -17,7 +17,7 @@
   min-height: 100dvh;
   background: var(--bg-dark);
   padding: 1.5rem;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
 }
 
 .placeholder-card {
