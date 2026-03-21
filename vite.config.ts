@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'Price Lens',
         short_name: 'PriceLens',
         description: 'Scan and recognize prices',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        theme_color: '#d0bb95',
+        background_color: '#1a2744',
         display: 'standalone',
         start_url: '/',
         icons: [
