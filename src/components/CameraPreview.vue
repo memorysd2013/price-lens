@@ -47,10 +47,6 @@ async function capture(): Promise<Blob> {
 }
 
 defineExpose({ capture });
-
-function handleFlash() {
-  // Flash toggle - skeleton placeholder
-}
 </script>
 
 <template>
