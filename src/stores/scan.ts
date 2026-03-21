@@ -2,7 +2,15 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import type { OcrResult } from '@/composables/useOcr';
 
-export type ScanStatus = 'idle' | 'camera' | 'captured' | 'selecting' | 'recognizing' | 'done' | 'error';
+export type ScanStatus =
+  | 'idle'
+  | 'camera'
+  | 'no_camera'
+  | 'captured'
+  | 'selecting'
+  | 'recognizing'
+  | 'done'
+  | 'error';
 
 export interface RectPercent {
   x: number;

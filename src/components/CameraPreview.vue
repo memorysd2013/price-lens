@@ -2,10 +2,16 @@
 import { ref, onMounted, watch } from 'vue';
 import { useCamera } from '@/composables/useCamera';
 import { useScanStore } from '@/stores/scan';
+import type { RectPercent } from '@/stores/scan';
+
+const props = defineProps<{
+  /** OCR region overlay; must match crop rect used after capture */
+  aimingRect: RectPercent;
+}>();
 
 const containerRef = ref<HTMLDivElement | null>(null);
 const videoRef = ref<HTMLVideoElement | null>(null);
-const { stream, error, isReady, startCamera, captureFromVideo } = useCamera();
+const { stream, isReady, startCamera, captureFromVideo } = useCamera();
 const scanStore = useScanStore();
 
 onMounted(async () => {
@@ -13,8 +19,8 @@ onMounted(async () => {
     await startCamera();
     scanStore.setStatus('camera');
   } catch {
-    scanStore.setStatus('error');
-    scanStore.setError('Cannot start camera. Please check permissions.');
+    scanStore.setStatus('no_camera');
+    scanStore.setError('無法使用相機，請在系統或瀏覽器設定中允許相機權限。');
   }
 });
 
@@ -32,7 +38,10 @@ async function capture(): Promise<Blob> {
   const container = containerRef.value;
   const opts =
     container && container.clientWidth > 0 && container.clientHeight > 0
-      ? { containerWidth: container.clientWidth, containerHeight: container.clientHeight }
+      ? {
+          containerWidth: container.clientWidth,
+          containerHeight: container.clientHeight,
+        }
       : undefined;
   return captureFromVideo(video, opts);
 }
@@ -45,23 +54,10 @@ function handleFlash() {
 </script>
 
 <template>
-  <div ref="containerRef" class="camera-preview">
-    <!-- Header overlay -->
-    <div class="camera-header">
-      <button class="header-btn icon-btn" type="button" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      </button>
-      <span class="header-hint">Drag to select price</span>
-      <button class="header-btn icon-btn" type="button" aria-label="Flash" @click="handleFlash">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-        </svg>
-      </button>
-    </div>
-
+  <div
+    ref="containerRef"
+    class="camera-preview"
+  >
     <video
       ref="videoRef"
       class="video"
@@ -69,11 +65,17 @@ function handleFlash() {
       playsinline
       muted
     />
-    <!-- Aiming frame: 75% width × 30% height, centered -->
-    <div class="aiming-frame" aria-hidden="true" />
-    <div v-if="error" class="error-overlay">
-      <p>{{ error }}</p>
-    </div>
+    <div
+      class="aiming-frame"
+      aria-hidden="true"
+      :style="{
+        left: props.aimingRect.x + '%',
+        top: props.aimingRect.y + '%',
+        width: props.aimingRect.width + '%',
+        height: props.aimingRect.height + '%',
+        transform: 'translate(0, 0)',
+      }"
+    />
   </div>
 </template>
 
@@ -85,19 +87,6 @@ function handleFlash() {
   min-height: 100%;
   overflow: hidden;
   background: #000;
-}
-
-.camera-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
-  z-index: 10;
 }
 
 .header-btn {
@@ -131,30 +120,12 @@ function handleFlash() {
   object-fit: cover;
 }
 
-/* Centered aiming frame: 75% width × 30% height of preview */
 .aiming-frame {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 75%;
-  height: 30%;
-  transform: translate(-50%, -50%);
   border: 2px solid rgba(255, 255, 255, 0.85);
   border-radius: 8px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
   pointer-events: none;
   z-index: 5;
-}
-
-.error-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  padding: 2rem;
-  text-align: center;
 }
 </style>

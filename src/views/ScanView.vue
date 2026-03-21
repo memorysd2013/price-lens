@@ -1,18 +1,43 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import CameraPreview from '@/components/CameraPreview.vue';
 import PhotoPreview from '@/components/PhotoPreview.vue';
 import PriceDisplay from '@/components/PriceDisplay.vue';
 import { useScanStore } from '@/stores/scan';
+import { useScanLayoutStore } from '@/stores/scanLayout';
 import { recognizePrice } from '@/composables/useOcr';
 import { cropImageToBlob } from '@/utils/cropImage';
+import { getDefaultAimingFrameRect } from '@/utils/scanPreviewAiming';
 
 const scanStore = useScanStore();
+const layoutStore = useScanLayoutStore();
 const cameraRef = ref<InstanceType<typeof CameraPreview> | null>(null);
 const photoPreviewRef = ref<InstanceType<typeof PhotoPreview> | null>(null);
 
-/** Aiming frame: 75% width × 30% height, centered (matches camera overlay) */
-const AIMING_FRAME_RECT = { x: 12.5, y: 35, width: 75, height: 30 };
+const viewportWidth = ref(
+  typeof window !== 'undefined' ? window.innerWidth : 390,
+);
+
+function syncViewportWidth() {
+  viewportWidth.value = window.innerWidth;
+}
+
+onMounted(() => {
+  syncViewportWidth();
+  window.addEventListener('resize', syncViewportWidth);
+});
+onUnmounted(() => {
+  window.removeEventListener('resize', syncViewportWidth);
+});
+
+const scanPreviewStyle = computed(() => ({
+  '--scan-preview-height': `${layoutStore.previewHeightPx}px`,
+}));
+
+/** Same rect as camera overlay; updates when preview height or width changes */
+const currentAimingRect = computed(() =>
+  getDefaultAimingFrameRect(viewportWidth.value, layoutStore.previewHeightPx),
+);
 
 async function runOcr(blob: Blob) {
   scanStore.setStatus('recognizing');
@@ -35,10 +60,11 @@ async function handleCaptureAndOcr() {
     const blob = await camera.capture();
     const dataUrl = URL.createObjectURL(blob);
     scanStore.setCapturedImage(dataUrl);
-    scanStore.setAimingFrameRect(AIMING_FRAME_RECT);
+    const rect = { ...currentAimingRect.value };
+    scanStore.setAimingFrameRect(rect);
     scanStore.setStatus('recognizing');
     scanStore.setError(null);
-    const croppedBlob = await cropImageToBlob(dataUrl, AIMING_FRAME_RECT);
+    const croppedBlob = await cropImageToBlob(dataUrl, rect);
     await runOcr(croppedBlob);
   } catch (e) {
     scanStore.setError(
@@ -70,18 +96,54 @@ async function handleConfirmSelection(rect: {
 function handleRetake() {
   scanStore.retake();
 }
+
+/** Remount camera preview to request permission again */
+function handleRetryCameraPermission() {
+  scanStore.setError(null);
+  scanStore.setStatus('idle');
+}
 </script>
 
 <template>
-  <div class="scan-view">
-    <!-- Camera preview: 75% height, fixed at top -->
+  <div class="scan-view" :style="scanPreviewStyle">
+    <!-- Camera preview strip (--scan-preview-height), fixed at top -->
     <template v-if="['idle', 'camera'].includes(scanStore.status)">
       <div class="preview-section preview-section--camera">
-        <CameraPreview ref="cameraRef" />
+        <CameraPreview ref="cameraRef" :aiming-rect="currentAimingRect" />
       </div>
     </template>
 
-    <!-- After capture: preview on top + result below -->
+    <template v-else-if="scanStore.status === 'no_camera'">
+      <div
+        class="preview-section preview-section--placeholder"
+        role="region"
+        aria-label="相機無法使用"
+      >
+        <div class="camera-permission-placeholder">
+          <svg
+            class="camera-permission-placeholder__icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path
+              d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+            />
+            <line x1="1" y1="1" x2="23" y2="23" stroke-linecap="round" />
+          </svg>
+          <p class="camera-permission-placeholder__title">
+            無法使用相機
+          </p>
+          <p class="camera-permission-placeholder__text">
+            {{ scanStore.errorMessage || '請在系統或瀏覽器設定中允許相機權限。' }}
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <!-- Photo preview (after capture) -->
     <template
       v-else-if="
         ['captured', 'selecting', 'recognizing', 'done'].includes(
@@ -97,14 +159,16 @@ function handleRetake() {
           @select-area="scanStore.enterSelectionMode()"
         />
       </div>
-      <div class="result-panel">
-        <PriceDisplay />
-      </div>
     </template>
 
-    <!-- Error state -->
     <div
-      v-else-if="scanStore.status === 'error'"
+      v-if="scanStore.status !== 'error'"
+      class="result-panel"
+    >
+      <PriceDisplay />
+    </div>
+    <div
+      v-else
       class="error-panel"
     >
       <p>{{ scanStore.errorMessage }}</p>
@@ -112,7 +176,16 @@ function handleRetake() {
 
     <!-- Fixed action bar: above footer -->
     <div class="action-bar">
-      <template v-if="['idle', 'camera'].includes(scanStore.status)">
+      <template v-if="scanStore.status === 'no_camera'">
+        <button
+          type="button"
+          class="btn btn-scan"
+          @click="handleRetryCameraPermission"
+        >
+          重試
+        </button>
+      </template>
+      <template v-else-if="['idle', 'camera'].includes(scanStore.status)">
         <button
           class="btn btn-scan"
           :disabled="scanStore.status === 'idle'"
@@ -196,23 +269,62 @@ function handleRetake() {
   padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
 }
 
-/* Preview/capture area: fixed at top, same size */
+/* Height from --scan-preview-height (scanLayoutStore.previewHeightPx) */
 .preview-section {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   width: 100%;
-  height: max(37.5vh, 210px);
+  height: var(--scan-preview-height, 180px);
   overflow: hidden;
   background: #000;
   z-index: 10;
 }
 
-/* Spacer below preview so content is not hidden */
+.preview-section--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.camera-permission-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  max-width: 20rem;
+}
+
+.camera-permission-placeholder__icon {
+  width: 48px;
+  height: 48px;
+  color: rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.camera-permission-placeholder__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.camera-permission-placeholder__text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .result-panel {
   flex: 1;
-  margin-top: max(37.5vh, 210px);
+  margin-top: var(--scan-preview-height, 180px);
   overflow-y: auto;
   padding: 0 1.5rem 1.5rem;
   min-height: 0;
