@@ -12,7 +12,6 @@ const currenciesStore = useCurrenciesStore();
 const discountsStore = useDiscountsStore();
 
 const originalTextOpen = ref(false);
-const sourceDropdownOpen = ref(false);
 const discountDropdownOpen = ref(false);
 const selectedPrice = ref<string | null>(null);
 
@@ -49,9 +48,15 @@ const discountedValue = computed(() => {
   return Math.round(base * (1 - discount.percent / 100));
 });
 
+/** 無幣別，或有多筆但未選中有效換算幣別 */
+const needsCurrencySelection = computed(
+  () =>
+    currenciesStore.list.length === 0 ||
+    currenciesStore.selectedCurrency == null,
+);
+
 const conversionHint = computed(() => {
-  if (currenciesStore.list.length === 0) return '請至設定新增幣別';
-  if (currenciesStore.selectedCurrency == null) return '請選擇來源幣別';
+  if (needsCurrencySelection.value) return '請在設定中選擇轉換幣別';
   if (parsedAmount.value == null && scanStore.recognizedPrice)
     return '無法換算';
   return null;
@@ -62,7 +67,6 @@ function selectPrice(price: string) {
 }
 
 function goToSettings() {
-  sourceDropdownOpen.value = false;
   discountDropdownOpen.value = false;
   navigate?.('settings');
 }
@@ -107,6 +111,14 @@ watch(
         <span class="header-label">ESTIMATED CONVERSION</span>
       </div>
 
+      <p
+        v-if="currenciesStore.selectedCurrency"
+        class="currency-meta"
+      >
+        {{ currenciesStore.selectedCurrency.name }} · 1 =
+        {{ currenciesStore.selectedCurrency.rateToTWD }} TWD
+      </p>
+
       <!-- OCR number only (no symbol, no TWD) -->
       <div
         class="converted-price"
@@ -143,7 +155,7 @@ watch(
       >
         {{ conversionHint }}
         <button
-          v-if="currenciesStore.list.length === 0"
+          v-if="needsCurrencySelection"
           type="button"
           class="hint-link"
           @click="goToSettings"
@@ -153,67 +165,6 @@ watch(
       </div>
 
       <div class="divider" />
-
-      <!-- SOURCE CURRENCY dropdown -->
-      <div class="section">
-        <span class="section-label">SOURCE CURRENCY</span>
-        <div
-          v-if="currenciesStore.list.length === 0"
-          class="dropdown-empty"
-        >
-          <span>請至設定新增幣別</span>
-          <button
-            type="button"
-            class="hint-link"
-            @click="goToSettings"
-          >
-            前往設定
-          </button>
-        </div>
-        <div
-          v-else
-          class="dropdown-wrap"
-        >
-          <button
-            type="button"
-            class="dropdown-btn"
-            :class="{ open: sourceDropdownOpen }"
-            @click="sourceDropdownOpen = !sourceDropdownOpen"
-          >
-            <span>{{
-              currenciesStore.selectedCurrency
-                ? currenciesStore.selectedCurrency.name
-                : '選擇幣別'
-            }}</span>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-          <div
-            v-show="sourceDropdownOpen"
-            class="dropdown-menu"
-          >
-            <button
-              v-for="c in currenciesStore.list"
-              :key="c.id"
-              type="button"
-              class="dropdown-item"
-              :class="{ active: currenciesStore.selectedCurrencyId === c.id }"
-              @click="
-                currenciesStore.setSelectedCurrencyId(c.id);
-                sourceDropdownOpen = false;
-              "
-            >
-              {{ c.name }} — 1 = {{ c.rateToTWD }} TWD
-            </button>
-          </div>
-        </div>
-      </div>
 
       <!-- Discount dropdown -->
       <div class="section">
@@ -423,6 +374,16 @@ watch(
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--text-muted);
+}
+
+.currency-meta {
+  margin: -0.25rem 0 0.5rem;
+  font-size: 0.72rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .converted-price {

@@ -80,6 +80,18 @@ function submitForm() {
 }
 
 function removeCurrency(id: string) {
+  const isActive = currenciesStore.selectedCurrencyId === id;
+  if (isActive) {
+    const others = currenciesStore.list.length - 1;
+    let msg = '此幣別為目前換算幣別。';
+    if (others > 0) {
+      msg += '刪除後將自動改為列表中的另一筆幣別。';
+    } else {
+      msg += '刪除後須重新新增幣別並選擇轉換幣別。';
+    }
+    msg += '\n\n確定要刪除嗎？';
+    if (!confirm(msg)) return;
+  }
   currenciesStore.remove(id);
 }
 
@@ -168,7 +180,7 @@ function removeDiscount(id: string) {
       <section class="section">
         <h3 class="section-title">自訂幣別</h3>
         <p class="section-desc">
-          新增幣別名稱與對台幣匯率，即可在掃描結果中選擇並換算。
+          新增幣別名稱與對台幣匯率，並指定其中一筆為換算幣別，掃描結果會依此匯率轉換。
         </p>
 
         <ul
@@ -185,6 +197,18 @@ function removeDiscount(id: string) {
               >1 {{ c.name }} = {{ c.rateToTWD }} TWD</span
             >
             <div class="currency-actions">
+              <span
+                v-if="currenciesStore.selectedCurrencyId === c.id"
+                class="badge-in-use"
+              >目前使用中</span>
+              <button
+                v-else
+                type="button"
+                class="btn-icon btn-use"
+                @click="currenciesStore.setSelectedCurrencyId(c.id)"
+              >
+                設為換算幣別
+              </button>
               <button
                 type="button"
                 class="btn-icon"
@@ -476,7 +500,27 @@ function removeDiscount(id: string) {
 .currency-actions {
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
+}
+
+.badge-in-use {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary, #c9a227);
+  background: rgba(201, 162, 39, 0.15);
+  border-radius: 8px;
+}
+
+.btn-use {
+  color: var(--text-primary);
+  background: rgba(201, 162, 39, 0.25);
+}
+
+.btn-use:hover {
+  background: rgba(201, 162, 39, 0.35);
 }
 
 .btn-icon {
