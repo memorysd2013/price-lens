@@ -21,7 +21,10 @@ provide<typeof handleNavigate>('navigate', handleNavigate);
     <ScanView v-show="currentView === 'scan'" />
     <HistoryView v-show="currentView === 'history'" />
     <SettingsView v-show="currentView === 'settings'" />
-    <BottomNav :current="currentView" @navigate="handleNavigate" />
+    <BottomNav
+      :current="currentView"
+      @navigate="handleNavigate"
+    />
   </div>
   <ReloadPrompt />
 </template>

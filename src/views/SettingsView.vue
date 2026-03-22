@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { APP_VERSION } from '@/appVersion';
+import ReloadPrompt from '@/components/ReloadPrompt.vue';
 import { useCurrenciesStore } from '@/stores/currencies';
 import { useDiscountsStore } from '@/stores/discounts';
 import type { CustomCurrency } from '@/stores/currencies';
@@ -117,10 +119,7 @@ function closeDiscountForm() {
 function submitDiscountForm() {
   discountFormError.value = '';
   const name = discountFormName.value.trim();
-  const percentNum = parseInt(
-    discountFormPercent.value.replace(/\D/g, ''),
-    10,
-  );
+  const percentNum = parseInt(discountFormPercent.value.replace(/\D/g, ''), 10);
 
   if (!name) {
     discountFormError.value = '請輸入折扣名稱';
@@ -163,6 +162,8 @@ function removeDiscount(id: string) {
   <div class="settings-view">
     <div class="settings-card">
       <h2 class="card-title">Settings</h2>
+
+      <ReloadPrompt />
 
       <section class="section">
         <h3 class="section-title">自訂幣別</h3>
@@ -267,6 +268,10 @@ function removeDiscount(id: string) {
           新增折扣
         </button>
       </section>
+
+      <footer class="app-meta section-divider">
+        <p class="version-line">版本 {{ APP_VERSION }}</p>
+      </footer>
     </div>
 
     <!-- Currency Add/Edit form -->
@@ -331,7 +336,9 @@ function removeDiscount(id: string) {
       @click.self="closeDiscountForm"
     >
       <div class="form-card">
-        <h3 class="form-title">{{ isDiscountEditing ? '編輯折扣' : '新增折扣' }}</h3>
+        <h3 class="form-title">
+          {{ isDiscountEditing ? '編輯折扣' : '新增折扣' }}
+        </h3>
         <form @submit.prevent="submitDiscountForm">
           <div class="form-field">
             <label for="discount-name">折扣名稱</label>
@@ -410,6 +417,18 @@ function removeDiscount(id: string) {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-meta {
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+}
+
+.version-line {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 .section-title {
